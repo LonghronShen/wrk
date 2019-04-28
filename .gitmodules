@@ -1,0 +1,6 @@
+[submodule "libs/openssl"]
+	path = libs/openssl
+	url = https://github.com/viaduck/openssl-cmake.git
+[submodule "libs/luajit"]
+	path = libs/luajit
+	url = https://github.com/LonghronShen/luajit.git

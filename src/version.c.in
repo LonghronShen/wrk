@@ -1,0 +1,3 @@
+#cmakedefine VER "@VER_STRING@"
+
+const char *VERSION=VER;
