@@ -16,6 +16,7 @@ endif (NOT CMAKE_BUILD_TYPE)
 
 if (NOT WIN32)
     include(CheckCXXCompilerFlag)
+    set(EXTRA_LIBRATIES ${CMAKE_DL_LIBS})
     CHECK_CXX_COMPILER_FLAG("-std=c++14" COMPILER_SUPPORTS_CXX14)
     if(COMPILER_SUPPORTS_CXX14)
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -Wall")
@@ -85,10 +86,10 @@ configure_file(${CMAKE_CURRENT_LIST_DIR}/src/version.c.in version.c)
 list(APPEND WRK_SOURCE_FILES "version.c")
 
 add_library(libwrk SHARED ${WRK_HEADER_FILES} ${WRK_SOURCE_FILES})
-target_link_libraries(libwrk OpenSSL::SSL OpenSSL::Crypto ${LUA_LIBRARIES})
+target_link_libraries(libwrk OpenSSL::SSL OpenSSL::Crypto ${LUA_LIBRARIES} ${EXTRA_LIBRATIES})
 
 add_library(libwrk-static STATIC ${WRK_HEADER_FILES} ${WRK_SOURCE_FILES})
-target_link_libraries(libwrk-static OpenSSL::SSL OpenSSL::Crypto ${LUA_LIBRARIES})
+target_link_libraries(libwrk-static OpenSSL::SSL OpenSSL::Crypto ${LUA_LIBRARIES} ${EXTRA_LIBRATIES})
 
 ADD_EXECUTABLE(wrk "${CMAKE_CURRENT_LIST_DIR}/src/wrk.c" ${WRK_HEADER_FILES} ${WRK_SOURCE_FILES})
-target_link_libraries(wrk OpenSSL::SSL OpenSSL::Crypto ${LUA_LIBRARIES})
+target_link_libraries(wrk OpenSSL::SSL OpenSSL::Crypto ${LUA_LIBRARIES} ${EXTRA_LIBRATIES})
