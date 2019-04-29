@@ -56,7 +56,7 @@ if (NOT LUA_FOUND)
         ${CMAKE_CURRENT_SOURCE_DIR}/libs/luajit/luajit/src/)
 endif()
 
-set(CMAKE_LUAJIT_COMPILE_OBJECT "luajit <SOURCE> <OBJECT>")
+set(CMAKE_LUAJIT_COMPILE_OBJECT "luajit -b <SOURCE> <OBJECT>")
 
 include_directories(
     ${OPENSSL_INCLUDE_DIR}
