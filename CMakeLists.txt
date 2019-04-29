@@ -56,7 +56,7 @@ if (NOT LUA_FOUND)
         ${CMAKE_CURRENT_SOURCE_DIR}/libs/luajit/luajit/src/)
 endif()
 
-set(CMAKE_LUAJIT_COMPILE_OBJECT "luajit -b <SOURCE> <OBJECT>")
+enable_language(LUAJIT)
 
 include_directories(
     ${OPENSSL_INCLUDE_DIR}
@@ -97,7 +97,6 @@ configure_file(${CMAKE_CURRENT_LIST_DIR}/src/version.c.in version.c)
 list(APPEND WRK_SOURCE_FILES "version.c")
 
 add_library(wrk_scripts OBJECT ${WRK_SCRIPT_FILES})
-set_source_files_properties(${WRK_SCRIPT_FILES} PROPERTIES LANGUAGE LUAJIT)
 
 add_library(libwrk SHARED ${WRK_HEADER_FILES} ${WRK_SOURCE_FILES})
 target_link_libraries(libwrk wrk_scripts OpenSSL::SSL OpenSSL::Crypto ${LUA_LIBRARIES} ${EXTRA_LIBRATIES})
