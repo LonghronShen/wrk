@@ -30,7 +30,7 @@ if (NOT OPENSSL_FOUND)
     set(OPENSSL_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/libs/openssl/)
 endif()
 
-find_package(lua)
+find_package(Lua)
 if (NOT LUA_FOUND)
     add_subdirectory(libs/luajit)
     set(LUA_INCLUDE_DIR 
