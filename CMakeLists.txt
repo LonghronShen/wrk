@@ -85,10 +85,10 @@ configure_file(${CMAKE_CURRENT_LIST_DIR}/src/version.c.in version.c)
 list(APPEND WRK_SOURCE_FILES "version.c")
 
 add_library(libwrk SHARED ${WRK_HEADER_FILES} ${WRK_SOURCE_FILES})
-target_link_libraries(libwrk OpenSSL::SSL OpenSSL::Crypto lualib)
+target_link_libraries(libwrk OpenSSL::SSL OpenSSL::Crypto ${LUA_LIBRARIES})
 
 add_library(libwrk-static STATIC ${WRK_HEADER_FILES} ${WRK_SOURCE_FILES})
-target_link_libraries(libwrk-static OpenSSL::SSL OpenSSL::Crypto lualib)
+target_link_libraries(libwrk-static OpenSSL::SSL OpenSSL::Crypto ${LUA_LIBRARIES})
 
 ADD_EXECUTABLE(wrk "${CMAKE_CURRENT_LIST_DIR}/src/wrk.c" ${WRK_HEADER_FILES} ${WRK_SOURCE_FILES})
-target_link_libraries(wrk OpenSSL::SSL OpenSSL::Crypto lualib)
+target_link_libraries(wrk OpenSSL::SSL OpenSSL::Crypto ${LUA_LIBRARIES})
