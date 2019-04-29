@@ -3,14 +3,16 @@ cmake_minimum_required (VERSION 3.12)
 
 set (CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+
 set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall")
 
 if (NOT CMAKE_BUILD_TYPE)
     set (CMAKE_BUILD_TYPE "Debug")
     set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g")
-else()
+else ()
     set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3")
-endif(NOT CMAKE_BUILD_TYPE)
+endif (NOT CMAKE_BUILD_TYPE)
 
 if (NOT WIN32)
     include(CheckCXXCompilerFlag)
