@@ -22,7 +22,9 @@ if (NOT WIN32)
     endif()
 endif(NOT WIN32)
 
-find_package(openssl)
+set(OPENSSL_USE_STATIC_LIBS TRUE)
+
+find_package(OpenSSL)
 if (NOT OPENSSL_FOUND)
     add_subdirectory(libs/openssl)
     set(OPENSSL_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/libs/openssl/)
