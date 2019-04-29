@@ -98,10 +98,10 @@ list(APPEND WRK_SOURCE_FILES "version.c")
 
 add_library(wrk_scripts OBJECT ${WRK_SCRIPT_FILES})
 
-add_library(libwrk SHARED ${WRK_HEADER_FILES} ${WRK_SOURCE_FILES})
+add_library(libwrk SHARED libwrk.cpp ${WRK_HEADER_FILES} ${WRK_SOURCE_FILES})
 target_link_libraries(libwrk wrk_scripts OpenSSL::SSL OpenSSL::Crypto ${LUA_LIBRARIES} ${EXTRA_LIBRATIES})
 
-add_library(libwrk-static STATIC ${WRK_HEADER_FILES} ${WRK_SOURCE_FILES})
+add_library(libwrk-static STATIC libwrk.cpp ${WRK_HEADER_FILES} ${WRK_SOURCE_FILES})
 target_link_libraries(libwrk-static wrk_scripts OpenSSL::SSL OpenSSL::Crypto ${LUA_LIBRARIES} ${EXTRA_LIBRATIES})
 
 ADD_EXECUTABLE(wrk "${CMAKE_CURRENT_LIST_DIR}/src/wrk.c" ${WRK_HEADER_FILES} ${WRK_SOURCE_FILES})
