@@ -56,7 +56,7 @@ if (NOT LUA_FOUND)
         ${CMAKE_CURRENT_SOURCE_DIR}/libs/luajit/luajit/src/)
 endif()
 
-enable_language(LUAJIT)
+enable_language(LUAJIT OPTIONAL)
 
 include_directories(
     ${OPENSSL_INCLUDE_DIR}
