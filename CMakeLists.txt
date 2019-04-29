@@ -20,12 +20,16 @@ if (NOT WIN32)
     set(EXTRA_LIBRATIES ${CMAKE_DL_LIBS})
 
     find_package (Threads REQUIRED)
+    find_package (LibDL REQUIRED)
+
     if(THREADS_HAVE_PTHREAD_ARG)
         add_compile_options("-pthread")
     endif()
     if(CMAKE_THREAD_LIBS_INIT)
         set(EXTRA_LIBRATIES "${CMAKE_THREAD_LIBS_INIT} ${EXTRA_LIBRATIES}")
     endif()
+
+    set(EXTRA_LIBRATIES "${LIBDL_LIBRARY} ${EXTRA_LIBRATIES}")
 
     CHECK_CXX_COMPILER_FLAG("-std=c++14" COMPILER_SUPPORTS_CXX14)
     if(COMPILER_SUPPORTS_CXX14)
