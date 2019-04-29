@@ -16,7 +16,17 @@ endif (NOT CMAKE_BUILD_TYPE)
 
 if (NOT WIN32)
     include(CheckCXXCompilerFlag)
+
     set(EXTRA_LIBRATIES ${CMAKE_DL_LIBS})
+
+    find_package (Threads REQUIRED)
+    if(THREADS_HAVE_PTHREAD_ARG)
+        add_compile_options("-pthread")
+    endif()
+    if(CMAKE_THREAD_LIBS_INIT)
+        set(EXTRA_LIBRATIES "${CMAKE_THREAD_LIBS_INIT} ${EXTRA_LIBRATIES}")
+    endif()
+
     CHECK_CXX_COMPILER_FLAG("-std=c++14" COMPILER_SUPPORTS_CXX14)
     if(COMPILER_SUPPORTS_CXX14)
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -Wall")
