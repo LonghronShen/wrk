@@ -30,16 +30,14 @@ if (NOT OPENSSL_FOUND)
     set(OPENSSL_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/libs/openssl/)
 endif()
 
-find_package(Lua)
+INCLUDE(FindLuaJIT)
+
+find_package(LuaJIT)
 if (NOT LUA_FOUND)
     add_subdirectory(libs/luajit)
     set(LUA_INCLUDE_DIR 
-        ${CMAKE_CURRENT_BINARY_DIR}/luaconf.h 
-        ${CMAKE_CURRENT_SOURCE_DIR}/libs/luajit/luajit/src/lua.h 
-        ${CMAKE_CURRENT_SOURCE_DIR}/libs/luajit/luajit/src/luajit.h 
-        ${CMAKE_CURRENT_SOURCE_DIR}/libs/luajit/luajit/src/lua.hpp 
-        ${CMAKE_CURRENT_SOURCE_DIR}/libs/luajit/luajit/src/lualib.h 
-        ${CMAKE_CURRENT_SOURCE_DIR}/libs/luajit/luajit/src/lauxlib.h)
+        ${CMAKE_CURRENT_BINARY_DIR}/ 
+        ${CMAKE_CURRENT_SOURCE_DIR}/libs/luajit/luajit/src/)
 endif()
 
 macro(add_luajit_target _target)
