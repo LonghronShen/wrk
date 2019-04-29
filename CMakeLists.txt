@@ -65,6 +65,7 @@ FILE(GLOB WRK_SOURCE_FILES
 )
 
 list(REMOVE_ITEM WRK_SOURCE_FILES "${CMAKE_CURRENT_LIST_DIR}/src/wrk.c")
+list(REMOVE_ITEM WRK_SOURCE_FILES "${CMAKE_CURRENT_LIST_DIR}/src/ae_*.c")
 
 if (WIN32)
     execute_process(COMMAND CMD /c "git describe --tags --always --dirty" OUTPUT_VARIABLE VER)
