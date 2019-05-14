@@ -1,3 +1,7 @@
-#cmakedefine VER "@VER_STRING@"
+#cmakedefine VER "@VER@"
+
+#ifndef VER
+#define VER "4.0.2"
+#endif
 
 const char *VERSION=VER;
