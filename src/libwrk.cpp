@@ -1,286 +1,294 @@
 #include "libwrk.h"
-#include "wrk.h"
-#include "script.h"
 
-typedef struct _thread_ex {
-    thread* thread;
+// #include "ssl.h"
+// #include "wrk.h"
+// #include "script.h"
 
-} THREAD_EX, *PTHREAD_EX;
+// typedef struct _thread_ex {
+//     thread* thread;
 
-int connect_socket(thread *thread, connection *c) {
-    struct addrinfo *addr = thread->addr;
-    struct aeEventLoop *loop = thread->loop;
-    int fd, flags;
+// } THREAD_EX, *PTHREAD_EX;
 
-    fd = socket(addr->ai_family, addr->ai_socktype, addr->ai_protocol);
+// int connect_socket(thread *thread, connection *c) {
+//     struct addrinfo *addr = thread->addr;
+//     struct aeEventLoop *loop = thread->loop;
+//     int fd, flags;
 
-    flags = fcntl(fd, F_GETFL, 0);
-    fcntl(fd, F_SETFL, flags | O_NONBLOCK);
+//     fd = socket(addr->ai_family, addr->ai_socktype, addr->ai_protocol);
 
-    if (connect(fd, addr->ai_addr, addr->ai_addrlen) == -1) {
-        if (errno != EINPROGRESS) goto error;
-    }
+//     flags = fcntl(fd, F_GETFL, 0);
+//     fcntl(fd, F_SETFL, flags | O_NONBLOCK);
 
-    flags = 1;
-    setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, &flags, sizeof(flags));
+//     if (connect(fd, addr->ai_addr, addr->ai_addrlen) == -1) {
+//         if (errno != EINPROGRESS) goto error;
+//     }
 
-    flags = AE_READABLE | AE_WRITABLE;
-    if (aeCreateFileEvent(loop, fd, flags, socket_connected, c) == AE_OK) {
-        c->parser.data = c;
-        c->fd = fd;
-        return fd;
-    }
+//     flags = 1;
+//     setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, &flags, sizeof(flags));
 
-  error:
-    thread->errors.connect++;
-    close(fd);
-    return -1;
-}
+//     flags = AE_READABLE | AE_WRITABLE;
+//     if (aeCreateFileEvent(loop, fd, flags, socket_connected, c) == AE_OK) {
+//         c->parser.data = c;
+//         c->fd = fd;
+//         return fd;
+//     }
 
-int reconnect_socket(thread *thread, connection *c) {
-    aeDeleteFileEvent(thread->loop, c->fd, AE_WRITABLE | AE_READABLE);
-    sock.close(c);
-    close(c->fd);
-    return connect_socket(thread, c);
-}
+//   error:
+//     thread->errors.connect++;
+//     close(fd);
+//     return -1;
+// }
 
-int record_rate(aeEventLoop *loop, long long id, void *data) {
-    thread *thread = data;
+// int reconnect_socket(thread *thread, connection *c) {
+//     aeDeleteFileEvent(thread->loop, c->fd, AE_WRITABLE | AE_READABLE);
+//     sock.close(c);
+//     close(c->fd);
+//     return connect_socket(thread, c);
+// }
 
-    if (thread->requests > 0) {
-        uint64_t elapsed_ms = (time_us() - thread->start) / 1000;
-        uint64_t requests = (thread->requests / (double) elapsed_ms) * 1000;
+// int record_rate(aeEventLoop *loop, long long id, void *data) {
+//     thread *thread = data;
 
-        stats_record(statistics.requests, requests);
+//     if (thread->requests > 0) {
+//         uint64_t elapsed_ms = (time_us() - thread->start) / 1000;
+//         uint64_t requests = (thread->requests / (double) elapsed_ms) * 1000;
 
-        thread->requests = 0;
-        thread->start    = time_us();
-    }
+//         stats_record(statistics.requests, requests);
 
-    if (stop) aeStop(loop);
+//         thread->requests = 0;
+//         thread->start    = time_us();
+//     }
 
-    return RECORD_INTERVAL_MS;
-}
+//     if (stop) aeStop(loop);
 
-int delay_request(aeEventLoop *loop, long long id, void *data) {
-    connection *c = data;
-    c->delayed = false;
-    aeCreateFileEvent(loop, c->fd, AE_WRITABLE, socket_writeable, c);
-    return AE_NOMORE;
-}
+//     return RECORD_INTERVAL_MS;
+// }
 
-int header_field(http_parser *parser, const char *at, size_t len) {
-    connection *c = parser->data;
-    if (c->state == VALUE) {
-        *c->headers.cursor++ = '\0';
-        c->state = FIELD;
-    }
-    buffer_append(&c->headers, at, len);
-    return 0;
-}
+// int delay_request(aeEventLoop *loop, long long id, void *data) {
+//     connection *c = data;
+//     c->delayed = false;
+//     aeCreateFileEvent(loop, c->fd, AE_WRITABLE, socket_writeable, c);
+//     return AE_NOMORE;
+// }
 
-int header_value(http_parser *parser, const char *at, size_t len) {
-    connection *c = parser->data;
-    if (c->state == FIELD) {
-        *c->headers.cursor++ = '\0';
-        c->state = VALUE;
-    }
-    buffer_append(&c->headers, at, len);
-    return 0;
-}
+// int header_field(http_parser *parser, const char *at, size_t len) {
+//     connection *c = parser->data;
+//     if (c->state == VALUE) {
+//         *c->headers.cursor++ = '\0';
+//         c->state = FIELD;
+//     }
+//     buffer_append(&c->headers, at, len);
+//     return 0;
+// }
 
-int response_body(http_parser *parser, const char *at, size_t len) {
-    connection *c = parser->data;
-    buffer_append(&c->body, at, len);
-    return 0;
-}
+// int header_value(http_parser *parser, const char *at, size_t len) {
+//     connection *c = parser->data;
+//     if (c->state == FIELD) {
+//         *c->headers.cursor++ = '\0';
+//         c->state = VALUE;
+//     }
+//     buffer_append(&c->headers, at, len);
+//     return 0;
+// }
 
-int response_complete(http_parser *parser) {
-    connection *c = parser->data;
-    thread *thread = c->thread;
-    uint64_t now = time_us();
-    int status = parser->status_code;
+// int response_body(http_parser *parser, const char *at, size_t len) {
+//     connection *c = parser->data;
+//     buffer_append(&c->body, at, len);
+//     return 0;
+// }
 
-    thread->complete++;
-    thread->requests++;
+// int response_complete(http_parser *parser) {
+//     connection *c = parser->data;
+//     thread *thread = c->thread;
+//     uint64_t now = time_us();
+//     int status = parser->status_code;
 
-    if (status > 399) {
-        thread->errors.status++;
-    }
+//     thread->complete++;
+//     thread->requests++;
 
-    if (c->headers.buffer) {
-        *c->headers.cursor++ = '\0';
-        script_response(thread->L, status, &c->headers, &c->body);
-        c->state = FIELD;
-    }
+//     if (status > 399) {
+//         thread->errors.status++;
+//     }
 
-    if (--c->pending == 0) {
-        if (!stats_record(statistics.latency, now - c->start)) {
-            thread->errors.timeout++;
-        }
-        c->delayed = cfg.delay;
-        aeCreateFileEvent(thread->loop, c->fd, AE_WRITABLE, socket_writeable, c);
-    }
+//     if (c->headers.buffer) {
+//         *c->headers.cursor++ = '\0';
+//         script_response(thread->L, status, &c->headers, &c->body);
+//         c->state = FIELD;
+//     }
 
-    if (!http_should_keep_alive(parser)) {
-        reconnect_socket(thread, c);
-        goto done;
-    }
+//     if (--c->pending == 0) {
+//         if (!stats_record(statistics.latency, now - c->start)) {
+//             thread->errors.timeout++;
+//         }
+//         c->delayed = cfg.delay;
+//         aeCreateFileEvent(thread->loop, c->fd, AE_WRITABLE, socket_writeable, c);
+//     }
 
-    http_parser_init(parser, HTTP_RESPONSE);
+//     if (!http_should_keep_alive(parser)) {
+//         reconnect_socket(thread, c);
+//         goto done;
+//     }
 
-  done:
-    return 0;
-}
+//     http_parser_init(parser, HTTP_RESPONSE);
 
-void socket_connected(aeEventLoop *loop, int fd, void *data, int mask) {
-    connection *c = data;
+//   done:
+//     return 0;
+// }
 
-    switch (sock.connect(c, cfg.host)) {
-        case OK:    break;
-        case ERROR: goto error;
-        case RETRY: return;
-    }
+// void socket_connected(aeEventLoop *loop, int fd, void *data, int mask) {
+//     connection *c = data;
 
-    http_parser_init(&c->parser, HTTP_RESPONSE);
-    c->written = 0;
+//     switch (sock.connect(c, cfg.host)) {
+//         case OK:    break;
+//         case ERROR: goto error;
+//         case RETRY: return;
+//     }
 
-    aeCreateFileEvent(c->thread->loop, fd, AE_READABLE, socket_readable, c);
-    aeCreateFileEvent(c->thread->loop, fd, AE_WRITABLE, socket_writeable, c);
+//     http_parser_init(&c->parser, HTTP_RESPONSE);
+//     c->written = 0;
 
-    return;
+//     aeCreateFileEvent(c->thread->loop, fd, AE_READABLE, socket_readable, c);
+//     aeCreateFileEvent(c->thread->loop, fd, AE_WRITABLE, socket_writeable, c);
 
-  error:
-    c->thread->errors.connect++;
-    reconnect_socket(c->thread, c);
-}
+//     return;
 
-void socket_writeable(aeEventLoop *loop, int fd, void *data, int mask) {
-    connection *c = data;
-    thread *thread = c->thread;
+//   error:
+//     c->thread->errors.connect++;
+//     reconnect_socket(c->thread, c);
+// }
 
-    if (c->delayed) {
-        uint64_t delay = script_delay(thread->L);
-        aeDeleteFileEvent(loop, fd, AE_WRITABLE);
-        aeCreateTimeEvent(loop, delay, delay_request, c, NULL);
-        return;
-    }
+// void socket_writeable(aeEventLoop *loop, int fd, void *data, int mask) {
+//     connection *c = data;
+//     thread *thread = c->thread;
 
-    if (!c->written) {
-        if (cfg.dynamic) {
-            script_request(thread->L, &c->request, &c->length);
-        }
-        c->start   = time_us();
-        c->pending = cfg.pipeline;
-    }
+//     if (c->delayed) {
+//         uint64_t delay = script_delay(thread->L);
+//         aeDeleteFileEvent(loop, fd, AE_WRITABLE);
+//         aeCreateTimeEvent(loop, delay, delay_request, c, NULL);
+//         return;
+//     }
 
-    char  *buf = c->request + c->written;
-    size_t len = c->length  - c->written;
-    size_t n;
+//     if (!c->written) {
+//         if (cfg.dynamic) {
+//             script_request(thread->L, &c->request, &c->length);
+//         }
+//         c->start   = time_us();
+//         c->pending = cfg.pipeline;
+//     }
 
-    switch (sock.write(c, buf, len, &n)) {
-        case OK:    break;
-        case ERROR: goto error;
-        case RETRY: return;
-    }
+//     char  *buf = c->request + c->written;
+//     size_t len = c->length  - c->written;
+//     size_t n;
 
-    c->written += n;
-    if (c->written == c->length) {
-        c->written = 0;
-        aeDeleteFileEvent(loop, fd, AE_WRITABLE);
-    }
+//     switch (sock.write(c, buf, len, &n)) {
+//         case OK:    break;
+//         case ERROR: goto error;
+//         case RETRY: return;
+//     }
 
-    return;
+//     c->written += n;
+//     if (c->written == c->length) {
+//         c->written = 0;
+//         aeDeleteFileEvent(loop, fd, AE_WRITABLE);
+//     }
 
-  error:
-    thread->errors.write++;
-    reconnect_socket(thread, c);
-}
+//     return;
 
-void socket_readable(aeEventLoop *loop, int fd, void *data, int mask) {
-    connection *c = data;
-    size_t n;
+//   error:
+//     thread->errors.write++;
+//     reconnect_socket(thread, c);
+// }
 
-    do {
-        switch (sock.read(c, &n)) {
-            case OK:    break;
-            case ERROR: goto error;
-            case RETRY: return;
-        }
+// void socket_readable(aeEventLoop *loop, int fd, void *data, int mask) {
+//     connection *c = data;
+//     size_t n;
 
-        if (http_parser_execute(&c->parser, &parser_settings, c->buf, n) != n) goto error;
-        if (n == 0 && !http_body_is_final(&c->parser)) goto error;
+//     do {
+//         switch (sock.read(c, &n)) {
+//             case OK:    break;
+//             case ERROR: goto error;
+//             case RETRY: return;
+//         }
 
-        c->thread->bytes += n;
-    } while (n == RECVBUF && sock.readable(c) > 0);
+//         if (http_parser_execute(&c->parser, &parser_settings, c->buf, n) != n) goto error;
+//         if (n == 0 && !http_body_is_final(&c->parser)) goto error;
 
-    return;
+//         c->thread->bytes += n;
+//     } while (n == RECVBUF && sock.readable(c) > 0);
 
-  error:
-    c->thread->errors.read++;
-    reconnect_socket(c->thread, c);
-}
+//     return;
 
-uint64_t time_us() {
-    struct timeval t;
-    gettimeofday(&t, NULL);
-    return (t.tv_sec * 1000000) + t.tv_usec;
-}
+//   error:
+//     c->thread->errors.read++;
+//     reconnect_socket(c->thread, c);
+// }
 
-char *copy_url_part(char *url, struct http_parser_url *parts, enum http_parser_url_fields field) {
-    char *part = NULL;
+// uint64_t time_us() {
+//     struct timeval t;
+//     gettimeofday(&t, NULL);
+//     return (t.tv_sec * 1000000) + t.tv_usec;
+// }
 
-    if (parts->field_set & (1 << field)) {
-        uint16_t off = parts->field_data[field].off;
-        uint16_t len = parts->field_data[field].len;
-        part = zcalloc(len + 1 * sizeof(char));
-        memcpy(part, &url[off], len);
-    }
+// char *copy_url_part(char *url, struct http_parser_url *parts, enum http_parser_url_fields field) {
+//     char *part = NULL;
 
-    return part;
-}
+//     if (parts->field_set & (1 << field)) {
+//         uint16_t off = parts->field_data[field].off;
+//         uint16_t len = parts->field_data[field].len;
+//         part = zcalloc(len + 1 * sizeof(char));
+//         memcpy(part, &url[off], len);
+//     }
 
-void *thread_main(void *arg) {
-    thread *thread = arg;
+//     return part;
+// }
 
-    char *request = NULL;
-    size_t length = 0;
+// void *thread_main(void *arg) {
+//     thread *thread = arg;
 
-    if (!cfg.dynamic) {
-        script_request(thread->L, &request, &length);
-    }
+//     char *request = NULL;
+//     size_t length = 0;
 
-    thread->cs = zcalloc(thread->connections * sizeof(connection));
-    connection *c = thread->cs;
+//     if (!cfg.dynamic) {
+//         script_request(thread->L, &request, &length);
+//     }
 
-    for (uint64_t i = 0; i < thread->connections; i++, c++) {
-        c->thread = thread;
-        c->ssl     = cfg.ctx ? SSL_new(cfg.ctx) : NULL;
-        c->request = request;
-        c->length  = length;
-        c->delayed = cfg.delay;
-        connect_socket(thread, c);
-    }
+//     thread->cs = zcalloc(thread->connections * sizeof(connection));
+//     connection *c = thread->cs;
 
-    aeEventLoop *loop = thread->loop;
-    aeCreateTimeEvent(loop, RECORD_INTERVAL_MS, record_rate, thread, NULL);
+//     for (uint64_t i = 0; i < thread->connections; i++, c++) {
+//         c->thread = thread;
+//         c->ssl     = cfg.ctx ? SSL_new(cfg.ctx) : NULL;
+//         c->request = request;
+//         c->length  = length;
+//         c->delayed = cfg.delay;
+//         connect_socket(thread, c);
+//     }
 
-    thread->start = time_us();
-    aeMain(loop);
+//     aeEventLoop *loop = thread->loop;
+//     aeCreateTimeEvent(loop, RECORD_INTERVAL_MS, record_rate, thread, NULL);
 
-    aeDeleteEventLoop(loop);
-    zfree(thread->cs);
+//     thread->start = time_us();
+//     aeMain(loop);
 
-    return NULL;
-}
+//     aeDeleteEventLoop(loop);
+//     zfree(thread->cs);
 
-stats* send_request(
-    const char* url,
-    const char* method,
-    const char** headers,
-    int headers_count,
-    const char* body,
-    stats* stats)
-{
+//     return NULL;
+// }
+
+// stats* send_request(
+//     const char* url,
+//     const char* method,
+//     const char** headers,
+//     int headers_count,
+//     const char* body,
+//     stats* stats)
+// {
     
+// }
+
+stats *send_request(const char *url, const char *method, const char **headers,
+                    int headers_count, const char *body, stats *stats)
+{
+    return nullptr;
 }
