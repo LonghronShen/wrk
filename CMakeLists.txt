@@ -48,8 +48,11 @@ if(APPLE)
 else()
     find_package(OpenSSL)
     if (OPENSSL_FOUND)
-        find_package (Threads REQUIRED)
-        find_package (LibDL REQUIRED)
+        find_package(Threads REQUIRED)
+
+        if(NOT WIN32)
+            find_package(LibDL REQUIRED)
+        endif()
 
         if(THREADS_HAVE_PTHREAD_ARG)
             add_compile_options("-pthread")
@@ -71,7 +74,9 @@ include(FindLuaJIT)
 
 find_package(LuaJIT)
 if(NOT LUA_FOUND)
-    set(USE_LUAJIT_FROM_SOURCE 1)
+    set(USE_LUAJIT_FROM_SOURCE 1 CACHE NUMBER "USE_LUAJIT_FROM_SOURCE" FORCE)
+    set(LUA_JIT_SCRIPTS_OUTPUT_DIR "${CMAKE_BINARY_DIR}" CACHE STRING "Environment variable for library script." FORCE)
+
     add_subdirectory(libs/luajit EXCLUDE_FROM_ALL)
     set(LUA_INCLUDE_DIR 
         ${CMAKE_CURRENT_BINARY_DIR}/
