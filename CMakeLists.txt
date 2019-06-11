@@ -81,17 +81,17 @@ if(NOT LUA_FOUND)
     set(USE_LUAJIT_FROM_SOURCE 1 CACHE STRING "USE_LUAJIT_FROM_SOURCE" FORCE)
     set(LUA_JIT_SCRIPTS_OUTPUT_DIR "${CMAKE_BINARY_DIR}" CACHE STRING "Environment variable for library script." FORCE)
     add_subdirectory(libs/luajit EXCLUDE_FROM_ALL)
-    include_directories(AFTER SYSTEM "${CMAKE_CURRENT_LIST_DIR}/libs/luajit/luajit/src/")
+    include_directories("${CMAKE_CURRENT_LIST_DIR}/libs/luajit/luajit/src/")
     list(APPEND EXTRA_LIBRATIES liblua-static)
 else()
     set(USE_LUAJIT_FROM_SOURCE 0 CACHE STRING "USE_LUAJIT_FROM_SOURCE" FORCE)
-    include_directories(AFTER SYSTEM "${LUA_INCLUDE_DIR}")
+    include_directories("${LUA_INCLUDE_DIR}")
     list(APPEND EXTRA_LIBRATIES ${LUA_LIBRARIES})
 endif()
 
 enable_language(LUAJIT OPTIONAL)
 
-include_directories(AFTER SYSTEM
+include_directories(
     "${CMAKE_CURRENT_BINARY_DIR}/"
     "${CMAKE_CURRENT_LIST_DIR}/src/"
 )
@@ -118,9 +118,9 @@ list(REMOVE_ITEM WRK_SOURCE_FILES ${WRK_CLI_SOURCE_FILES})
 list(FILTER WRK_SOURCE_FILES EXCLUDE REGEX "ae_.+\.c")
 list(REMOVE_DUPLICATES WRK_SOURCE_FILES)
 
-if (WIN32)
+if(WIN32)
     execute_process(COMMAND CMD /c "git describe --tags --always --dirty" OUTPUT_VARIABLE VER)
-elseif (UNIX)
+elseif(UNIX)
     execute_process(COMMAND git describe --tags --always --dirty OUTPUT_VARIABLE VER)
     if(APPLE)
         execute_process(COMMAND sw_vers -productVersion OUTPUT_VARIABLE MACOSX_DEPLOYMENT_TARGET)
@@ -157,10 +157,8 @@ target_link_libraries(wrk wrk_scripts ${EXTRA_LIBRATIES})
 
 if(WIN32)
     list(APPEND ADDITIONAL_COMPAT_INCLUDES
-        "${CMAKE_CURRENT_LIST_DIR}/libs/libressl-portable/include/compat"
-        ${INCLUDE_DIRECTORIES})
-    message(STATUS "ADDITIONAL_COMPAT_INCLUDES: " ${ADDITIONAL_COMPAT_INCLUDES})
-    set_target_properties(libwrk PROPERTIES INCLUDE_DIRECTORIES ${ADDITIONAL_COMPAT_INCLUDES})
-    set_target_properties(libwrk-static PROPERTIES INCLUDE_DIRECTORIES ${ADDITIONAL_COMPAT_INCLUDES})
-    set_target_properties(wrk PROPERTIES INCLUDE_DIRECTORIES ${ADDITIONAL_COMPAT_INCLUDES})
+        "${CMAKE_CURRENT_LIST_DIR}/libs/libressl-portable/include/compat")
+    target_include_directories(libwrk PRIVATE ${ADDITIONAL_COMPAT_INCLUDES})
+    target_include_directories(libwrk-static PRIVATE ${ADDITIONAL_COMPAT_INCLUDES})
+    target_include_directories(wrk PRIVATE ${ADDITIONAL_COMPAT_INCLUDES})
 endif()

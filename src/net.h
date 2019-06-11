@@ -6,6 +6,10 @@
 #include <openssl/ssl.h>
 #include "wrk.h"
 
+#ifdef ERROR
+#undef ERROR
+#endif
+
 typedef enum {
     OK,
     ERROR,
