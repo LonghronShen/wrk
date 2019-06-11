@@ -10,7 +10,10 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin CACHE STRING "CMAKE_L
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin CACHE STRING "CMAKE_RUNTIME_OUTPUT_DIRECTORY" FORCE)
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin CACHE STRING "CMAKE_ARCHIVE_OUTPUT_DIRECTORY" FORCE)
 
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
+set(CMAKE_MODULE_PATH
+    ${CMAKE_MODULE_PATH}
+    ${CMAKE_CURRENT_SOURCE_DIR}/cmake
+    ${CMAKE_CURRENT_SOURCE_DIR}/libs/libressl-portable)
 
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
@@ -40,7 +43,7 @@ if(NOT WIN32)
     endif()
 endif()
 
-option(USE_SYSTEM_OPENSSL "Use system openssl implementation." OFF)
+option(USE_SYSTEM_OPENSSL "Use system openssl implementation." ON)
 
 set(CMAKE_LUAJIT_CREATE_STATIC_LIBRARY 1 CACHE STRING "CMAKE_LUAJIT_CREATE_STATIC_LIBRARY" FORCE)
 
@@ -61,8 +64,16 @@ if(USE_SYSTEM_OPENSSL)
         endif()
     endif()
 else()
-    add_subdirectory(libs/libressl-portable EXCLUDE_FROM_ALL)
-    list(APPEND EXTRA_LIBRATIES ssl)
+    # Use libressl-portable instead.
+    find_package(LibreSSL)
+    if(NOT LIBRESSL_FOUND)
+        add_subdirectory(libs/libressl-portable)
+    endif()
+    list(APPEND EXTRA_LIBRATIES LibreSSL::SSL LibreSSL::Crypto)
+endif()
+
+if(WIN32)
+    include_directories("libs/libressl-portable/include/compat")
 endif()
 
 include(FindLuaJIT)
