@@ -1,5 +1,9 @@
 #!/bin/bash
 
+cd libs/libressl-portable
+./autogen.sh
+cd ../../
+
 mkdir -p build
 
 cd build
