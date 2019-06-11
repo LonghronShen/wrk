@@ -65,6 +65,7 @@ if(USE_SYSTEM_OPENSSL)
     endif()
 else()
     # Use libressl-portable instead.
+    include(FindPackageHandleStandardArgs)
     find_package(LibreSSL)
     if(NOT LIBRESSL_FOUND)
         add_subdirectory(libs/libressl-portable)
