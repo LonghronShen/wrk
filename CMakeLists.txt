@@ -51,6 +51,7 @@ if(USE_SYSTEM_OPENSSL)
     set(OPENSSL_USE_STATIC_LIBS TRUE)
     find_package(openssl REQUIRED)
     list(APPEND EXTRA_LIBRATIES OpenSSL::SSL OpenSSL::Crypto)
+    include_directories(${OPENSSL_INCLUDE_DIR})
     if(UNIX AND NOT APPLE)
         find_package(LibDL REQUIRED)
         if(THREADS_HAVE_PTHREAD_ARG)
@@ -73,31 +74,25 @@ else()
     list(APPEND EXTRA_LIBRATIES LibreSSL::SSL LibreSSL::Crypto)
 endif()
 
-if(WIN32)
-    include_directories("libs/libressl-portable/include/compat")
-endif()
-
 include(FindLuaJIT)
 
 find_package(LuaJIT)
 if(NOT LUA_FOUND)
     set(USE_LUAJIT_FROM_SOURCE 1 CACHE STRING "USE_LUAJIT_FROM_SOURCE" FORCE)
     set(LUA_JIT_SCRIPTS_OUTPUT_DIR "${CMAKE_BINARY_DIR}" CACHE STRING "Environment variable for library script." FORCE)
-
     add_subdirectory(libs/luajit EXCLUDE_FROM_ALL)
-    set(LUA_INCLUDE_DIR
-        ${CMAKE_CURRENT_BINARY_DIR}/
-        ${CMAKE_CURRENT_SOURCE_DIR}/libs/luajit/luajit/src/)
-    set(LUA_LIBRARIES liblua-static)
+    include_directories(AFTER SYSTEM "${CMAKE_CURRENT_LIST_DIR}/libs/luajit/luajit/src/")
+    list(APPEND EXTRA_LIBRATIES liblua-static)
 else()
     set(USE_LUAJIT_FROM_SOURCE 0 CACHE STRING "USE_LUAJIT_FROM_SOURCE" FORCE)
+    include_directories(AFTER SYSTEM "${LUA_INCLUDE_DIR}")
+    list(APPEND EXTRA_LIBRATIES ${LUA_LIBRARIES})
 endif()
 
 enable_language(LUAJIT OPTIONAL)
 
-include_directories(
-    ${OPENSSL_INCLUDE_DIR}
-    ${LUA_INCLUDE_DIR}
+include_directories(AFTER SYSTEM
+    "${CMAKE_CURRENT_BINARY_DIR}/"
     "${CMAKE_CURRENT_LIST_DIR}/src/"
 )
 
@@ -150,12 +145,22 @@ if(USE_LUAJIT_FROM_SOURCE)
 endif()
 
 add_library(libwrk SHARED ${WRK_LIB_SOURCE_FILES} ${WRK_HEADER_FILES} ${WRK_SOURCE_FILES})
-target_link_libraries(libwrk wrk_scripts OpenSSL::SSL OpenSSL::Crypto ${LUA_LIBRARIES} ${EXTRA_LIBRATIES})
+target_link_libraries(libwrk wrk_scripts ${EXTRA_LIBRATIES})
 set_target_properties(libwrk PROPERTIES OUTPUT_NAME "wrk")
 
 add_library(libwrk-static STATIC ${WRK_LIB_SOURCE_FILES} ${WRK_HEADER_FILES} ${WRK_SOURCE_FILES})
-target_link_libraries(libwrk-static wrk_scripts OpenSSL::SSL OpenSSL::Crypto ${LUA_LIBRARIES} ${EXTRA_LIBRATIES})
+target_link_libraries(libwrk-static wrk_scripts ${EXTRA_LIBRATIES})
 set_target_properties(libwrk-static PROPERTIES OUTPUT_NAME "wrk")
 
 add_executable(wrk ${WRK_CLI_SOURCE_FILES} ${WRK_HEADER_FILES} ${WRK_SOURCE_FILES})
-target_link_libraries(wrk wrk_scripts OpenSSL::SSL OpenSSL::Crypto ${LUA_LIBRARIES} ${EXTRA_LIBRATIES})
+target_link_libraries(wrk wrk_scripts ${EXTRA_LIBRATIES})
+
+if(WIN32)
+    list(APPEND ADDITIONAL_COMPAT_INCLUDES
+        "${CMAKE_CURRENT_LIST_DIR}/libs/libressl-portable/include/compat"
+        ${INCLUDE_DIRECTORIES})
+    message(STATUS "ADDITIONAL_COMPAT_INCLUDES: " ${ADDITIONAL_COMPAT_INCLUDES})
+    set_target_properties(libwrk PROPERTIES INCLUDE_DIRECTORIES ${ADDITIONAL_COMPAT_INCLUDES})
+    set_target_properties(libwrk-static PROPERTIES INCLUDE_DIRECTORIES ${ADDITIONAL_COMPAT_INCLUDES})
+    set_target_properties(wrk PROPERTIES INCLUDE_DIRECTORIES ${ADDITIONAL_COMPAT_INCLUDES})
+endif()

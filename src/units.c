@@ -2,8 +2,11 @@
 
 #include <stdlib.h>
 #include <stdio.h>
-#include <strings.h>
 #include <inttypes.h>
+
+#ifndef _WIN32
+#include <strings.h>
+#endif
 
 #include "units.h"
 #include "aprintf.h"
