@@ -74,7 +74,7 @@ include(FindLuaJIT)
 
 find_package(LuaJIT)
 if(NOT LUA_FOUND)
-    set(USE_LUAJIT_FROM_SOURCE 1 CACHE NUMBER "USE_LUAJIT_FROM_SOURCE" FORCE)
+    set(USE_LUAJIT_FROM_SOURCE 1 CACHE STRING "USE_LUAJIT_FROM_SOURCE" FORCE)
     set(LUA_JIT_SCRIPTS_OUTPUT_DIR "${CMAKE_BINARY_DIR}" CACHE STRING "Environment variable for library script." FORCE)
 
     add_subdirectory(libs/luajit EXCLUDE_FROM_ALL)
@@ -83,7 +83,7 @@ if(NOT LUA_FOUND)
         ${CMAKE_CURRENT_SOURCE_DIR}/libs/luajit/luajit/src/)
     set(LUA_LIBRARIES liblua-static)
 else()
-    set(USE_LUAJIT_FROM_SOURCE 0)
+    set(USE_LUAJIT_FROM_SOURCE 0 CACHE STRING "USE_LUAJIT_FROM_SOURCE" FORCE)
 endif()
 
 enable_language(LUAJIT OPTIONAL)
@@ -144,9 +144,11 @@ endif()
 
 add_library(libwrk SHARED ${WRK_LIB_SOURCE_FILES} ${WRK_HEADER_FILES} ${WRK_SOURCE_FILES})
 target_link_libraries(libwrk wrk_scripts OpenSSL::SSL OpenSSL::Crypto ${LUA_LIBRARIES} ${EXTRA_LIBRATIES})
+set_target_properties(libwrk PROPERTIES OUTPUT_NAME "wrk")
 
 add_library(libwrk-static STATIC ${WRK_LIB_SOURCE_FILES} ${WRK_HEADER_FILES} ${WRK_SOURCE_FILES})
 target_link_libraries(libwrk-static wrk_scripts OpenSSL::SSL OpenSSL::Crypto ${LUA_LIBRARIES} ${EXTRA_LIBRATIES})
+set_target_properties(libwrk-static PROPERTIES OUTPUT_NAME "wrk")
 
-ADD_EXECUTABLE(wrk ${WRK_CLI_SOURCE_FILES} ${WRK_HEADER_FILES} ${WRK_SOURCE_FILES})
+add_executable(wrk ${WRK_CLI_SOURCE_FILES} ${WRK_HEADER_FILES} ${WRK_SOURCE_FILES})
 target_link_libraries(wrk wrk_scripts OpenSSL::SSL OpenSSL::Crypto ${LUA_LIBRARIES} ${EXTRA_LIBRATIES})
