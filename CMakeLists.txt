@@ -22,6 +22,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall")
 set(CMAKE_MACOSX_RPATH 1)
 set(CXX_STD 17 CACHE STRING "Set to 11 or 14 to enable C++11 or C++17 builds, respectively." FORCE)
 set(C_STD 11 CACHE STRING "Set to 99 or 11 to enable C99 or C11 builds, respectively." FORCE)
+set_property(GLOBAL PROPERTY CXX_STANDARD_REQUIRED ON)
 
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE "Debug")
@@ -30,17 +31,17 @@ else()
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3")
 endif()
 
-if(NOT WIN32)
-    include(CheckCXXCompilerFlag)
-    CHECK_CXX_COMPILER_FLAG("-std=c++14" COMPILER_SUPPORTS_CXX14)
-    if(COMPILER_SUPPORTS_CXX14)
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -Wall")
-    else()
-        message(FATAL_ERROR "Compiler ${CMAKE_CXX_COMPILER} has no C++14 support.")
-    endif()
-    if(APPLE)
-        set(CMAKE_EXE_LINKER_FLAGS "-pagezero_size 10000 -image_base 100000000")
-    endif()
+# include(CheckCXXCompilerFlag)
+# CHECK_CXX_COMPILER_FLAG("-Wall" COMPILER_SUPPORTS_DISABLE_WARNING)
+
+# if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
+#     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -Wall")
+# else()
+#     message(FATAL_ERROR "Compiler ${CMAKE_CXX_COMPILER} has no C++14 support.")
+# endif()
+
+if(APPLE)
+    set(CMAKE_EXE_LINKER_FLAGS "-pagezero_size 10000 -image_base 100000000")
 endif()
 
 option(USE_SYSTEM_OPENSSL "Use system openssl implementation." ON)
@@ -146,17 +147,23 @@ endif()
 
 add_library(libwrk SHARED ${WRK_LIB_SOURCE_FILES} ${WRK_HEADER_FILES} ${WRK_SOURCE_FILES})
 target_link_libraries(libwrk wrk_scripts ${EXTRA_LIBRATIES})
-set_target_properties(libwrk PROPERTIES OUTPUT_NAME "wrk")
+
+if(NOT WIN32)
+    set_target_properties(libwrk PROPERTIES OUTPUT_NAME "wrk")
+endif()
 
 add_library(libwrk-static STATIC ${WRK_LIB_SOURCE_FILES} ${WRK_HEADER_FILES} ${WRK_SOURCE_FILES})
 target_link_libraries(libwrk-static wrk_scripts ${EXTRA_LIBRATIES})
-set_target_properties(libwrk-static PROPERTIES OUTPUT_NAME "wrk")
+
+if(NOT WIN32)
+    set_target_properties(libwrk-static PROPERTIES OUTPUT_NAME "wrk")
+endif()
 
 add_executable(wrk ${WRK_CLI_SOURCE_FILES} ${WRK_HEADER_FILES} ${WRK_SOURCE_FILES})
 target_link_libraries(wrk wrk_scripts ${EXTRA_LIBRATIES})
 
 if(WIN32)
-    list(APPEND ADDITIONAL_COMPAT_INCLUDES
+    include_directories(
         "${CMAKE_CURRENT_LIST_DIR}/libs/libressl-portable/include/compat")
     target_include_directories(libwrk PRIVATE ${ADDITIONAL_COMPAT_INCLUDES})
     target_include_directories(libwrk-static PRIVATE ${ADDITIONAL_COMPAT_INCLUDES})
