@@ -1,4 +1,5 @@
 obj/
 wrk
 build/
+build.*/
 .vscode/

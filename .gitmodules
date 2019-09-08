@@ -4,3 +4,18 @@
 [submodule "libs/libressl-portable"]
 	path = libs/libressl-portable
 	url = https://github.com/LonghronShen/libressl-portable.git
+[submodule "libs/redis"]
+	path = libs/redis
+	url = https://github.com/tporadowski/redis.git
+[submodule "libs/http-parser"]
+	path = libs/http-parser
+	url = https://github.com/nodejs/http-parser.git
+[submodule "libs/wepoll"]
+	path = libs/wepoll
+	url = https://github.com/piscisaureus/wepoll.git
+[submodule "libs/jemalloc-cmake"]
+	path = libs/jemalloc-cmake
+	url = https://github.com/jemalloc/jemalloc-cmake.git
+[submodule "libs/getopt_port"]
+	path = libs/getopt_port
+	url = https://github.com/kimgr/getopt_port.git
