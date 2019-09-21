@@ -18,4 +18,4 @@
 	url = https://github.com/jemalloc/jemalloc-cmake.git
 [submodule "libs/getopt_port"]
 	path = libs/getopt_port
-	url = https://github.com/kimgr/getopt_port.git
+	url = https://github.com/LonghronShen/getopt_port.git
