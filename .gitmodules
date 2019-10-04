@@ -19,3 +19,6 @@
 [submodule "libs/getopt_port"]
 	path = libs/getopt_port
 	url = https://github.com/LonghronShen/getopt_port.git
+[submodule "libs/libsodium"]
+	path = libs/libsodium
+	url = https://github.com/LonghronShen/libsodium.git
