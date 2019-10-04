@@ -9,7 +9,7 @@
 	url = https://github.com/tporadowski/redis.git
 [submodule "libs/http-parser"]
 	path = libs/http-parser
-	url = https://github.com/nodejs/http-parser.git
+	url = https://github.com/LonghronShen/http-parser.git
 [submodule "libs/wepoll"]
 	path = libs/wepoll
 	url = https://github.com/piscisaureus/wepoll.git
