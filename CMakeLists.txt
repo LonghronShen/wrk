@@ -55,7 +55,7 @@ if(UNIX AND NOT APPLE)
     endif()
 endif()
 
-option(USE_SYSTEM_OPENSSL "Use system openssl implementation." ON)
+option(USE_SYSTEM_OPENSSL "Use system openssl implementation." OFF)
 
 set(CMAKE_LUAJIT_CREATE_STATIC_LIBRARY 1 CACHE STRING "CMAKE_LUAJIT_CREATE_STATIC_LIBRARY" FORCE)
 
@@ -65,14 +65,21 @@ if(USE_SYSTEM_OPENSSL)
     list(APPEND EXTRA_LIBRATIES OpenSSL::SSL OpenSSL::Crypto)
     include_directories(${OPENSSL_INCLUDE_DIR})
 else()
-    # Use libressl-portable instead.
+    # Use libsodium instead.
+    set(sodium_USE_STATIC_LIBS ON)
     include(FindPackageHandleStandardArgs)
-    find_package(LibreSSL)
-    if(NOT LIBRESSL_FOUND)
-        add_subdirectory(libs/libressl-portable)
+    find_package(sodium)
+    if(NOT sodium_FOUND)
+        add_subdirectory(libs/libsodium)
     endif()
-    list(APPEND EXTRA_LIBRATIES LibreSSL::SSL LibreSSL::Crypto)
+    list(APPEND EXTRA_LIBRATIES ${sodium_USE_STATIC_LIBS})
 endif()
+
+add_subdirectory(libs/getopt_port)
+list(APPEND EXTRA_LIBRATIES getopt_port)
+
+add_subdirectory(libs/http-parser)
+list(APPEND EXTRA_LIBRATIES http-parser)
 
 include(FindLuaJIT)
 
